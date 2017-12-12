@@ -1,0 +1,35 @@
+resources:
+
+  - name: basicnode_ci_gitrepo
+    type: gitRepo
+    # replace github with your GitHub integration name
+    integration: github
+    pointer:
+      # replace ambarish2012/basic-node with source code location (e.g. GitHub)
+      # where you cloned this sample project.
+      sourceName: ambarish2012/basic-node
+      branch: master
+
+  - name: basicnode_ci_dockerhub
+    type: cliConfig
+    # replace dockerhub with your Docker Hub integration name
+    integration: dockerhub
+
+jobs:
+
+    - name: basicnode_ci
+      type: runSh
+      steps:
+        - IN: basicnode_ci_gitrepo
+        - IN: basicnode_ci_dockerhub
+        - TASK:
+          - script: |
+              # pushd the repository root directory
+              pushd $(shipctl get_resource_state basicnode_ci_gitrepo)
+                DOCKER_REPO=basic-node
+                DOCKER_ACC=ambarish2012
+                ls -l
+                shippable_retry npm install
+                docker build -t $DOCKER_ACC/$DOCKER_REPO:master.$BUILD_NUMBER .
+                docker push $DOCKER_ACC/$DOCKER_REPO:master.$BUILD_NUMBER
+              popd
